@@ -199,3 +199,83 @@ Zookeeper是Apacahe Hadoop的子项目，是一个树型的目录服务，支持
          </plugin>
      </plugins>
 ### *叁*
+#### 商品类目选择
+> 类目的查询使用的是easyUI的异步tree;{"id(当前节点的id)","text(当前节点的名称)","state(当前节点无子节点设置为'open',有子节点为'closed')"}
+#### 图片上传
+>+ 文件的上传
+  >>+ spring / strus2 /servlet
+  >>+ 页面:三要素
+   >>>1. form-post
+   >>>2. form-entype="mutipart/form-data"
+   >>>2. form-input:name属性
+  >>+ 服务端servlet:原始的,创建磁盘等等
+  >>+ 服务端stusts2:默认18个拦截器中有专门处理图片的拦截器
+  >>+ 服务端springmvc:核心配置文件中配置图片解析器,形参中MutiPartFile aa;
+>+ 图片服务器FastDFS
+ >>+ 搭载专门处理图片的服务器.这里使用分布式文件系统FastDFS。
+ >>+ FastDFS是用c语言编写的一款开源的分布式文件系统。FastDFS为互联网量身定制，充分考虑了冗余备份、负载均衡、线性扩容等机制，并注重高可用、高性能等指标，使用FastDFS很容易搭建一套高性能的文件服务器集群提供文件上传、下载等服务。
+ >>+ FastDFS架构包括 Tracker server和Storage server。客户端请求Tracker server进行文件上传、下载，通过Tracker server调度最终由Storage server完成文件上传和下载。
+ >>+ Tracker server作用是负载均衡和调度，通过Tracker server在文件上传时可以根据一些策略找到Storage server提供文件上传服务。可以将tracker称为追踪服务器或调度服务器。
+ >>+ Storage server作用是文件存储，客户端上传的文件最终存储在Storage服务器上，Storage server没有实现自己的文件系统而是利用操作系统 的文件系统来管理文件。可以将storage称为存储服务器。
+>>>+ 服务端两个角色：
+   >>>+ Tracker：管理集群，tracker也可以实现集群。每个tracker节点地位平等。收集Storage集群的状态。
+   >>>+ Storage：实际保存文件
+   >>>+ Storage分为多个组，每个组之间保存的文件是不同的。每个组内部可以有多个成员，组成员内部保存的内容是一样的，组成员的地位是一致的，没有主从的概念。
+>>+  客户端上传文件后存储服务器将文件ID返回给客户端，此文件ID用于以后访问该文件的索引信息。文件索引信息包括：组名，虚拟磁盘路径，数据两级目录，文件名。
+>+ 图片上传功能实现
+ >> 请求的url：/pic/upload    参数：MultiPartFile uploadFile
+#### 富文本编辑器的使用KindEditor
+> KindEditor的图片上传插件，对浏览器兼容性不好。 使用@ResponseBody注解返回java对象，
+  Content-Type:application/json;charset=UTF-8
+  返回字符串时： Content-Type:text/plan;charset=UTF-8
+#### 商品添加功能完成
+### *肆*
+#### 前台系统搭建
+> 需要创建一个内容服务系统。参考taotao-manager创建。
+  >> Taotao-content：聚合工程打包方式pom
+   >>>- taotao-content-interface jar
+   >>>- taotao-content-Service  war
+#### Cms系统的实现
+>1. 内容分类管理 (easyui异步tree)
+>2. 内容管理(cms)
+ >> mybatis实现主键返回需求有两种方法:
+  >>>1. 插入返回插入记录的主键id
+       	keyProperty		===>	映射到数据库的主键为当前pojo的哪个字段
+       	resultType		===>	字段的类型
+       	order			===>	排序，要插入后才知道id是多少，所以当然是AFTER（之后），触发是UUID就可以是BEFORE-->
+       	selectKey keyProperty="id" resultType="java.lang.Long" order="AFTER"(SELECT LAST_INSERT_ID() [mysql自带的函数] )
+  >>>2. useGeneratedKeys="true" keyProperty="主键名" 
+### *伍*
+#### Redis服务器搭建
+>1. Redis是当前比较热门的NOSQL系统之一，它是一个开源的使用 c语言编写的key-value存储系统（区别于MySQL的二维表格的形式存储。）。
+>和Memcache类似，但很大程度补偿了Memcache的不足。和Memcache一样，Redis数据都是缓存在计算机内存中，不同的是，Memcache只能将数
+>据缓存到内存中，无法自动定期写入硬盘，这就表示，一断电或重启，内存清空，数据丢失。所以Memcache的应用场景适用于缓存无需持久化
+>的数据。而Redis不同的是它会周期性的把更新的数据写入磁盘或者把修改操作写入追加的记录文件，实现数据的持久化
+>2. Redis读取的速度是110000次/s，写的速度是81000次/s,
+>3. 支持多种数据结构：string（字符串）；list（列表）；hash（哈希），	set（集合）；zset(有序集合)
+>4. 持久化，主从复制（集群）支持过期时间，支持事务，消息订阅。官方不支持window,但是又第三方版本。
+##### 安装
+> Redis是c语言开发的。
+安装redis需要c语言的编译环境。如果没有gcc需要在线安装。yum install gcc-c++
+安装步骤：
+ >>1. redis的源码包上传到linux系统。
+ >>2. 解压缩redis。
+ >>3. 编译。make 
+ >>4. 安装。make install PREFIX=/usr/local/redis
+##### key的过期时间 expire keyname seconds
+##### redis的持久化方案
+>+ Redis的所有数据都是保存到内存中的。
+>+ Rdb,快照形式，定期把内存中当前时刻的数据保存到磁盘。Redis默认支持的持久化方案。
+>+ aof形式：append only file。把所有对redis数据库操作的命令，增删改操作的命令。保存到文件中。数据库恢复时把所有的命令执行一遍即可。
+##### redis集群
+>+ 架构细节:
+  >>+ 所有的redis节点彼此互联(PING-PONG机制),内部使用二进制协议优化传输速度和带宽.
+  >>+ 节点的fail是通过集群中超过半数的节点检测失效时才生效.
+  >>+ 客户端与redis节点直连,不需要中间proxy层.客户端不需要连接集群所有节点,连接集群中任何一个可用节点即可
+  >>+ redis-cluster把所有的物理节点映射到[0-16383]slot上,cluster 负责维护node<->slot<->value
+>+ Redis 集群中内置了 16384 个哈希槽，当需要在 Redis 集群中放置一个 key-value 时，redis 先对 key 使用 crc16 算法算出一个结果，
+>然后把结果对 16384 求余数，这样每个 key 都会对应一个编号在 0-16383 之间的哈希槽，redis 会根据节点数量大致均等的将哈希槽映
+>射到不同的节点
+#### 使用redis做缓存
+#### 缓存同步。
+>对内容信息做增删改操作后只需要把对应缓存删除即可。
