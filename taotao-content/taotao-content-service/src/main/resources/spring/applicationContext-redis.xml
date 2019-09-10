@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
+
+    <!-- 配置单机版的连接 -->
+  <!--  <bean id="jedisPool" class="redis.clients.jedis.JedisPool">
+        <constructor-arg name="host" value="192.168.25.77"></constructor-arg>
+        <constructor-arg name="port" value="6379"></constructor-arg>
+    </bean>
+    <bean id="jedisClientPool" class="com.taotao.jedis.JedisClientPool"/>-->
+   <!--集群版的配置-->
+    <bean id="jedisCluster" class="redis.clients.jedis.JedisCluster">
+        <constructor-arg >
+           <set>
+               <!--连任意一个就可以了-->
+               <bean id="hostAndPort" class="redis.clients.jedis.HostAndPort">
+                   <constructor-arg name="host" value="192.168.25.77"/>
+                   <constructor-arg name="port" value="7000"/>
+               </bean>
+           </set>
+        </constructor-arg>
+    </bean>
+    <bean id="jedisClientCluster" class="com.taotao.jedis.JedisClientCluster"/>
+
+</beans>
